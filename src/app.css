@@ -1,0 +1,277 @@
+/* ============================================================================================
+   CF632BLE companion — "instrument readout" design system.
+   Subject: a dual-frequency (50/100 kHz) bioimpedance body-composition scale with an LED weight
+   display. Signature: an always-dark "device screen" panel showing live weight in amber segmented
+   mono digits. Teal-cyan = the BIA electrical signal (body-composition accents). Numerics are
+   tabular monospace throughout, like a lab instrument. Theme-aware (light + dark).
+   ============================================================================================ */
+
+:root {
+	/* Cool paper base — deliberately green-cool, not the generic warm cream. */
+	--bg: #eef2f1;
+	--bg-2: #e4eae8;
+	--panel: #ffffff;
+	--ink: #0f1c19;
+	--muted: #566966;
+	--faint: #849692;
+	--line: rgba(15, 40, 34, 0.12);
+	--line-strong: rgba(15, 40, 34, 0.22);
+
+	/* Signal (BIA / body-composition accent). */
+	--signal: #0d9488;
+	--signal-bright: #0f766e;
+	--signal-weak: rgba(13, 148, 136, 0.12);
+
+	/* Level ramp. */
+	--lv-under: #6b8a92;
+	--lv-standard: #0d9488;
+	--lv-excellent: #15803d;
+	--lv-over: #c2620c;
+	--lv-alert: #c2410c;
+	--lv-danger: #b91c1c;
+
+	/* The device-screen readout tokens are FIXED dark in both themes (it's a physical screen). */
+	--screen-bg: #0b1512;
+	--screen-bg-2: #0e1a16;
+	--screen-line: rgba(120, 220, 190, 0.14);
+	--readout: #ffb020; /* LED amber — the weight digits */
+	--readout-dim: rgba(255, 176, 32, 0.28);
+	--screen-signal: #2dd4bf;
+	--screen-ink: #cfe7df;
+	--screen-muted: #6f8f86;
+
+	--radius: 14px;
+	--radius-sm: 9px;
+	--shadow: 0 1px 2px rgba(10, 30, 25, 0.06), 0 8px 24px -12px rgba(10, 30, 25, 0.18);
+
+	--font-ui: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+	--font-mono: ui-monospace, 'SF Mono', 'JetBrains Mono', 'Cascadia Code', Menlo, Consolas,
+		monospace;
+}
+
+@media (prefers-color-scheme: dark) {
+	:root {
+		--bg: #0b1210;
+		--bg-2: #0f1917;
+		--panel: #131f1c;
+		--ink: #e6efe9;
+		--muted: #8aa39c;
+		--faint: #5c716b;
+		--line: rgba(210, 240, 232, 0.1);
+		--line-strong: rgba(210, 240, 232, 0.18);
+
+		--signal: #2dd4bf;
+		--signal-bright: #5eecd9;
+		--signal-weak: rgba(45, 212, 191, 0.12);
+
+		--lv-under: #7c96a0;
+		--lv-standard: #2dd4bf;
+		--lv-excellent: #4ade80;
+		--lv-over: #f0a04b;
+		--lv-alert: #f2793f;
+		--lv-danger: #f26d6d;
+
+		--shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 10px 30px -14px rgba(0, 0, 0, 0.6);
+	}
+}
+
+/* Explicit theme override wins over prefers-color-scheme in both directions. */
+:root[data-theme='light'] {
+	color-scheme: light;
+}
+:root[data-theme='dark'] {
+	color-scheme: dark;
+	--bg: #0b1210;
+	--bg-2: #0f1917;
+	--panel: #131f1c;
+	--ink: #e6efe9;
+	--muted: #8aa39c;
+	--faint: #5c716b;
+	--line: rgba(210, 240, 232, 0.1);
+	--line-strong: rgba(210, 240, 232, 0.18);
+	--signal: #2dd4bf;
+	--signal-bright: #5eecd9;
+	--signal-weak: rgba(45, 212, 191, 0.12);
+	--lv-under: #7c96a0;
+	--lv-standard: #2dd4bf;
+	--lv-excellent: #4ade80;
+	--lv-over: #f0a04b;
+	--lv-alert: #f2793f;
+	--lv-danger: #f26d6d;
+	--shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 10px 30px -14px rgba(0, 0, 0, 0.6);
+}
+
+* {
+	box-sizing: border-box;
+}
+
+html {
+	color-scheme: light dark;
+}
+
+body {
+	margin: 0;
+	background:
+		radial-gradient(1200px 600px at 100% -10%, var(--bg-2), transparent 60%),
+		var(--bg);
+	color: var(--ink);
+	font-family: var(--font-ui);
+	font-size: 15px;
+	line-height: 1.5;
+	-webkit-font-smoothing: antialiased;
+	text-rendering: optimizelegibility;
+	min-height: 100vh;
+}
+
+h1,
+h2,
+h3 {
+	margin: 0;
+	font-weight: 650;
+	letter-spacing: -0.01em;
+}
+
+a {
+	color: var(--signal-bright);
+}
+
+button {
+	font-family: inherit;
+}
+
+/* --- Reusable primitives ------------------------------------------------------------------- */
+
+.eyebrow {
+	font-family: var(--font-mono);
+	font-size: 11px;
+	letter-spacing: 0.14em;
+	text-transform: uppercase;
+	color: var(--muted);
+	display: inline-flex;
+	align-items: center;
+	gap: 7px;
+}
+.eyebrow::before {
+	content: '';
+	width: 5px;
+	height: 5px;
+	border-radius: 50%;
+	background: var(--signal);
+	box-shadow: 0 0 0 3px var(--signal-weak);
+}
+
+.panel {
+	background: var(--panel);
+	border: 1px solid var(--line);
+	border-radius: var(--radius);
+	box-shadow: var(--shadow);
+}
+
+.num {
+	font-family: var(--font-mono);
+	font-variant-numeric: tabular-nums;
+	font-feature-settings: 'tnum' 1;
+}
+
+.btn {
+	appearance: none;
+	border: 1px solid var(--line-strong);
+	background: transparent;
+	color: var(--ink);
+	border-radius: var(--radius-sm);
+	padding: 9px 15px;
+	font-size: 14px;
+	font-weight: 550;
+	cursor: pointer;
+	transition:
+		background 0.15s ease,
+		border-color 0.15s ease,
+		transform 0.05s ease;
+}
+.btn:hover {
+	background: var(--signal-weak);
+	border-color: var(--signal);
+}
+.btn:active {
+	transform: translateY(1px);
+}
+.btn:disabled {
+	opacity: 0.45;
+	cursor: not-allowed;
+}
+.btn.primary {
+	background: var(--signal);
+	border-color: var(--signal);
+	color: #04211d;
+}
+.btn.primary:hover {
+	background: var(--signal-bright);
+	border-color: var(--signal-bright);
+}
+.btn.ghost {
+	border-color: transparent;
+	color: var(--muted);
+	padding: 7px 10px;
+}
+.btn.ghost:hover {
+	color: var(--ink);
+	background: var(--signal-weak);
+}
+.btn.danger:hover {
+	color: var(--lv-danger);
+	background: color-mix(in srgb, var(--lv-danger) 12%, transparent);
+}
+
+:where(button, a, input, select, [tabindex]):focus-visible {
+	outline: 2px solid var(--signal);
+	outline-offset: 2px;
+	border-radius: 6px;
+}
+
+.chip {
+	display: inline-flex;
+	align-items: center;
+	gap: 7px;
+	font-family: var(--font-mono);
+	font-size: 12px;
+	padding: 4px 10px;
+	border-radius: 999px;
+	border: 1px solid var(--line-strong);
+	color: var(--muted);
+	white-space: nowrap;
+}
+.chip .dot {
+	width: 7px;
+	height: 7px;
+	border-radius: 50%;
+	background: var(--faint);
+}
+
+label {
+	font-size: 13px;
+	color: var(--muted);
+}
+
+input,
+select {
+	font-family: var(--font-ui);
+	font-size: 14px;
+	color: var(--ink);
+	background: var(--bg);
+	border: 1px solid var(--line-strong);
+	border-radius: var(--radius-sm);
+	padding: 8px 10px;
+	width: 100%;
+}
+input:focus,
+select:focus {
+	outline: none;
+	border-color: var(--signal);
+}
+
+@media (prefers-reduced-motion: reduce) {
+	* {
+		animation-duration: 0.001ms !important;
+		transition-duration: 0.001ms !important;
+	}
+}
