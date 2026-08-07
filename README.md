@@ -10,12 +10,26 @@ app ("Unique Health", package `com.lefu.xin`) and reimplemented here from scratc
 ## Features
 
 - First-run profile setup (age, sex, height, units) — required by the on-device BIA math
-- Connect over Web Bluetooth, sync time, push profile, trigger a measurement
+- Connect over Web Bluetooth, sync time, trigger a measurement
 - Live weight + ~2 dozen body-composition metrics (fat %/kg, muscle, water, protein, bone,
   visceral fat, BMR, BMI, body age/score/type, …), each with a level badge
 - Weight and fat-mass trends (dependency-free SVG charts with regression trendline)
 - History, JSON export, debug panel dumping raw BLE traffic
+- **Device tab** — full member management for the profiles stored *on the scale*: read its member
+  list, add anyone who uses it (age/sex/height/athlete, into a free slot), edit or delete a member,
+  register your own profile in one click, set who the next weigh-in belongs to, and toggle the
+  scale's heart-rate and body-fat modules
 - Single user, data in `localStorage`, "Clear all saved data" option in Profile tab
+
+Measuring never writes anything persistent to the scale: body composition is computed here, from
+the weight and dual-frequency impedance the scale streams. The Device tab exists for people who
+also use the scale standalone or alongside the vendor app — every write there is behind an
+explicit click.
+
+Note on member names: the scale stores no name for a member — its profile record is
+age/sex/height/slot/weight plus an opaque id. Names you type in the Device tab are kept in this
+browser and matched back by id, so members added from another device or the vendor app appear
+unnamed.
 
 ## Requirements
 

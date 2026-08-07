@@ -12,6 +12,9 @@
 
 	$effect(() => {
 		// Persist whenever any field changes (reads all props so the effect tracks them all).
+		// userId/memberId are carried through untouched: they are not editable here, and dropping
+		// them would orphan a member already registered on the scale under that memberId (it is
+		// what a delete targets — BLE-PROTOCOL.md §5.1.3).
 		profile.set({
 			ageYears: p.ageYears,
 			sex: p.sex,
@@ -19,7 +22,9 @@
 			athlete: p.athlete,
 			pIndex: p.pIndex,
 			units: p.units,
-			lastKnownWeightKg: p.lastKnownWeightKg
+			lastKnownWeightKg: p.lastKnownWeightKg,
+			userId: p.userId,
+			memberId: p.memberId
 		});
 	});
 
@@ -56,14 +61,14 @@
 	{#if onboarding}
 		<h2 class="title">Set up your profile</h2>
 		<p class="lead">
-			Before your first weigh-in, tell the app about yourself. This is sent to the scale so it
-			attributes each reading to you, and used for the on-device body-composition math. It stays on
-			this device — nothing is uploaded anywhere.
+			Before your first weigh-in, tell the app about yourself. Age, sex and height are what the
+			on-device body-composition math needs — the scale itself only ever sends weight and
+			impedance. Everything stays on this device; nothing is uploaded anywhere.
 		</p>
 	{:else}
 		<p class="lead">
-			Sent to the scale so it attributes each reading to you, and used for the on-device body-composition
-			math. Stays on this device.
+			Used for the on-device body-composition math — the scale only sends weight and impedance.
+			Stays on this device.
 		</p>
 	{/if}
 
@@ -101,9 +106,15 @@
 
 		<div class="field">
 			<label for="pindex">Scale member slot</label>
-			<input id="pindex" type="number" min="1" max="16" bind:value={p.pIndex} />
+			<input id="pindex" type="number" min="1" max="127" bind:value={p.pIndex} />
 		</div>
 	</div>
+
+	<p class="lead slot-note">
+		The member slot only matters if you register this profile onto the scale from the
+		<strong>Device</strong> tab — measurements never need it. Pick a free slot there rather than
+		guessing here; registering overwrites whoever already occupies the slot.
+	</p>
 
 	<label class="check">
 		<input type="checkbox" bind:checked={p.athlete} />
@@ -141,6 +152,9 @@
 		color: var(--muted);
 		font-size: 13.5px;
 		max-width: 60ch;
+	}
+	.slot-note {
+		margin: 14px 0 0;
 	}
 	.continue {
 		margin-top: 20px;

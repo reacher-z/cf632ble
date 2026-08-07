@@ -23,6 +23,7 @@
 	import TrendsView from '$lib/components/TrendsView.svelte';
 	import HistoryTable from '$lib/components/HistoryTable.svelte';
 	import ProfileForm from '$lib/components/ProfileForm.svelte';
+	import DevicePanel from '$lib/components/DevicePanel.svelte';
 	import DebugPanel from '$lib/components/DebugPanel.svelte';
 
 	let client: ScaleClient | undefined = $state();
@@ -32,14 +33,18 @@
 	let battery = $state<number | null>(null);
 	let deviceInfo = $state<DeviceInfo | null>(null);
 	let errorMsg = $state<string | null>(null);
+	// Persistent scale-side module toggles; null until the scale reports a recognisable state.
+	let heartRateModule = $state<boolean | null>(null);
+	let bodyFatModule = $state<boolean | null>(null);
 
-	type Tab = 'measure' | 'trends' | 'history' | 'profile' | 'debug';
+	type Tab = 'measure' | 'trends' | 'history' | 'profile' | 'device' | 'debug';
 	let tab = $state<Tab>('measure');
 	const tabs: { key: Tab; label: string }[] = [
 		{ key: 'measure', label: 'Measure' },
 		{ key: 'trends', label: 'Trends' },
 		{ key: 'history', label: 'History' },
 		{ key: 'profile', label: 'Profile' },
+		{ key: 'device', label: 'Device' },
 		{ key: 'debug', label: 'Debug' }
 	];
 
@@ -59,6 +64,10 @@
 			c.on('live', (l) => (live = l)),
 			c.on('battery', (b) => (battery = b)),
 			c.on('deviceinfo', (d) => (deviceInfo = d)),
+			c.on('module', (m) => {
+				if (m.opcode === 0x06) heartRateModule = m.enabled;
+				else bodyFatModule = m.enabled;
+			}),
 			c.on('error', (e) => (errorMsg = e.message)),
 			c.on('reading', handleReading)
 		];
@@ -73,6 +82,14 @@
 
 	async function connect() {
 		errorMsg = null;
+		// Everything below is a property of the device we are about to talk to, not of this app —
+		// keeping the previous scale's readings on screen while a different one connects would be
+		// quietly wrong. The client resets its own per-connection state in parallel.
+		battery = null;
+		deviceInfo = null;
+		live = null;
+		heartRateModule = null;
+		bodyFatModule = null;
 		try {
 			await client?.connect({ profile: toUserProfileInput($profile) });
 		} catch (e) {
@@ -151,6 +168,14 @@
 			/>
 		{:else if tab === 'profile'}
 			<ProfileForm />
+		{:else if tab === 'device'}
+			<DevicePanel
+				{client}
+				{connected}
+				units={$profile.units}
+				{heartRateModule}
+				{bodyFatModule}
+			/>
 		{:else if tab === 'debug'}
 			<DebugPanel />
 		{/if}
