@@ -1,5 +1,7 @@
 # CF632BLE — Web Bluetooth body-composition scale app
 
+[![Featured by Awesome REA](https://raw.githubusercontent.com/reacher-z/Awesome-REA/477658fa73f6860e86cd1fc526657c2efdc25194/assets/featured-by-awesome-rea-inline.svg)](https://awesomerea.org/resources/cf632ble-case/)
+
 Client-side web app that talks to a **CF632BLE** smart scale over **Web Bluetooth**, computes
 body composition locally, and stores data in the browser — no server, no vendor backend.
 SvelteKit + `adapter-static`, deployed to GitHub Pages.
